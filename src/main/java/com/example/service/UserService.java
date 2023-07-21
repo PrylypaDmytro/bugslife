@@ -13,6 +13,8 @@ import com.example.repository.DeletedUserRepository;
 import com.example.repository.UserRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.TypedQuery;
+
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
@@ -84,14 +86,22 @@ public class UserService {
 	@SuppressWarnings("unchecked")
 	public List<User> search(UserSearchForm form, boolean isAdmin) {
 		String role = isAdmin ? "ADMIN" : "USER";
-		if (form.getName() != null && form.getName() != "") {
-			String sql = "SELECT * FROM users WHERE name = '" + form.getName() + "'";
+
+		if (form.getName() != null && !form.getName().isEmpty()) {
+			String jpql = "SELECT u FROM User u WHERE u.name = :name";
 			if (!isAdmin) {
-				sql += " AND role = '" + role + "'";
+				jpql += " AND u.role = :role";
 			}
-			return entityManager.createNativeQuery(sql, User.class)
-					.getResultList();
+
+			TypedQuery<User> query = entityManager.createQuery(jpql, User.class);
+			query.setParameter("name", form.getName());
+			if (!isAdmin) {
+				query.setParameter("role", role);
+			}
+
+			return query.getResultList();
 		}
+
 		if (!isAdmin) {
 			return userRepository.findByRole(role);
 		} else {
