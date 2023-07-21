@@ -63,4 +63,5 @@ public class WebSecurityConfig {
 
 		return new CustomInMemoryUserDetailsManager(user, admin);
 	}
+
 }
