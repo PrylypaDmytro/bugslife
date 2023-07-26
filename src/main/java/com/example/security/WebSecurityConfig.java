@@ -18,11 +18,11 @@ public class WebSecurityConfig {
 
 	@Bean
 	SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-		http
-				.csrf(c -> c.ignoringRequestMatchers("auth/login", "auth/logout")
-						.csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
+		http.csrf(c -> c.ignoringRequestMatchers("auth/login", "auth/logout")
+				.csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
 				.cors(c -> c.disable())
 				.authorizeHttpRequests((requests) -> requests
+						.requestMatchers("/admin/**").hasRole("ADMIN")
 						.requestMatchers("/", "/css/**", "js/**", "/image/**").permitAll()
 						.requestMatchers("/*.ico").permitAll()
 						.anyRequest().authenticated())
