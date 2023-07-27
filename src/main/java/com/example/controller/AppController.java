@@ -23,6 +23,8 @@ import com.example.model.App;
 import com.example.service.AppService;
 import com.example.utils.CheckUtil;
 
+import jakarta.servlet.http.HttpServletRequest;
+
 @Controller
 @RequestMapping("/apps")
 public class AppController {
@@ -89,7 +91,7 @@ public class AppController {
 
 	@PutMapping
 	public String update(@Validated @ModelAttribute App entity, BindingResult result,
-			RedirectAttributes redirectAttributes) {
+			RedirectAttributes redirectAttributes, HttpServletRequest request) {
 		App app = null;
 		try {
 			// descriptionは2000文字まで
@@ -98,7 +100,11 @@ public class AppController {
 				redirectAttributes.addFlashAttribute("error", Message.MSG_VALIDATE_ERROR);
 				return "redirect:/apps";
 			}
-
+			// Set the default value for the URL if it is empty or null
+			if (entity.getUrl() == null || entity.getUrl().isEmpty()) {
+				String currentURL = request.getRequestURL().toString();
+				entity.setUrl(currentURL);
+			}
 			app = appService.save(entity);
 			redirectAttributes.addFlashAttribute("success", Message.MSG_SUCESS_UPDATE);
 			return "redirect:/apps/" + app.getId();
