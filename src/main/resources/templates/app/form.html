@@ -36,25 +36,47 @@
     <a th:href="@{/apps}" class="btn btn-default">Back</a>
   </form>
   <script>
-    window.addEventListener('load', function () {
+    function addEvent(element, eventName, callback) {
+      if (element.addEventListener) {
+        element.addEventListener(eventName, callback, false);
+      } else if (element.attachEvent) {
+        element.attachEvent('on' + eventName, callback);
+      }
+    }
+
+    function handleImageFile() {
       const imageFile = document.getElementById('image_file');
       const image = document.getElementById('image');
-      imageFile.addEventListener('change', function () {
-        const file = imageFile.files[0];
-        const reader = new FileReader();
-        reader.addEventListener('load', function () {
-          image.value = reader.result;
-          const imagePreview = document.createElement('img');
-          imagePreview.id = 'image_preview';
-          imagePreview.src = reader.result;
-          imagePreview.style = "max-width: 200px; max-height: 200px;"
+      const file = imageFile.files[0];
+      const reader = new FileReader();
 
-          imageFile.after(imagePreview);
-        });
-        reader.readAsDataURL(file);
-      });
-    });
+      reader.onload = function () {
+        image.value = reader.result;
+        const imagePreview = document.createElement('img');
+        imagePreview.id = 'image_preview';
+        imagePreview.src = reader.result;
+        imagePreview.style = "max-width: 200px; max-height: 200px;"
+
+        imageFile.parentNode.insertBefore(imagePreview, imageFile.nextSibling);
+      };
+
+      reader.readAsDataURL(file);
+    }
+
+    window.onload = function () {
+      const imageFile = document.getElementById('image_file');
+      const image = document.getElementById('image');
+
+      if (window.FileReader) {
+        // Modern browsers supporting FileReader API
+        addEvent(imageFile, 'change', handleImageFile);
+      } else {
+        // Internet Explorer 8 or older
+        imageFile.onchange = handleImageFile;
+      }
+    };
   </script>
+
   <link th:href="@{/css/app.css}" type="text/css" rel="stylesheet" />
 </th:block>
 
