@@ -14,7 +14,8 @@
     </div>
     <div class="form-group">
       <label for="description">Description</label>
-      <input id="description" name="description" type="text" class="form-control" th:field="*{description}" />
+      <textarea id="description" name="description" style="resize: none; overflow: hidden;"
+        oninput="autoExpandTextarea(this)" type="text" class="form-control" th:field="*{description}" />
     </div>
     <div class="form-group">
       <label for="image_file-lg">Image</label>
@@ -75,6 +76,15 @@
         imageFile.onchange = handleImageFile;
       }
     };
+
+    function autoExpandTextarea(textarea) {
+      // Limit the input to 2000 characters
+      if (textarea.value.length > 2000) {
+        textarea.value = textarea.value.substring(0, 2000);
+      }
+      textarea.style.height = 'auto';
+      textarea.style.height = textarea.scrollHeight + 'px';
+    }
   </script>
 
   <link th:href="@{/css/app.css}" type="text/css" rel="stylesheet" />
