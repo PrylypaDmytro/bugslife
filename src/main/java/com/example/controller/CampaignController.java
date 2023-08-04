@@ -234,13 +234,11 @@ public class CampaignController {
 	@PostMapping("/bulkStatusUpdate")
 	public String bulkStatusUpdate(@Validated @ModelAttribute("form") CampaignForm form, BindingResult result,
 			RedirectAttributes redirectAttributes) {
-		if (result.hasErrors()) {
-			redirectAttributes.addFlashAttribute("error", this.makeErrorMessage(result));
-			return "redirect:/campaigns";
-		}
 		try {
-			campaignService.bulkStatusUpdate(form.getCheckedIdList(), form.getNextStatus());
-			redirectAttributes.addFlashAttribute("success", Message.MSG_SUCESS_UPDATE);
+			if (!result.hasErrors()) {
+				campaignService.bulkStatusUpdate(form.getCheckedIdList(), form.getNextStatus());
+				redirectAttributes.addFlashAttribute("success", Message.MSG_SUCESS_UPDATE);
+			}
 			return "redirect:/campaigns";
 		} catch (Exception e) {
 			redirectAttributes.addFlashAttribute("error", e.getMessage());
