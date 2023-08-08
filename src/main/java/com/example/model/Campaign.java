@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.lang.String;
 
 import com.example.annotation.UnusedCampaignCode;
+import com.example.annotation.ValidCampaignCode;
 import com.example.enums.CampaignStatus;
 import com.example.enums.DiscountType;
 
@@ -41,6 +42,8 @@ public class Campaign extends TimeEntity implements Serializable {
 	private String name;
 
 	@Column(name = "code", nullable = false)
+	@ValidCampaignCode(message = "キャンペーンコードは0000から9999の範囲で入力してください。")
+	@NotEmpty(message = "キャンペーンコードを入力してください。")
 	private String code;
 
 	@Column(name = "from_date", nullable = false)
