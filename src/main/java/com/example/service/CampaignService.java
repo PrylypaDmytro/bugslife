@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.sql.Types;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -67,15 +68,21 @@ public class CampaignService {
 	public void importCSV(MultipartFile file) throws IOException {
 		try (BufferedReader br = new BufferedReader(
 				new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
-			String line = br.readLine(); // 1行目はヘッダーなので読み飛ばす
-			// TODO: ここを一括更新処理に変更したい batchInsertメソッドを使用するように
+			String line = br.readLine(); // Skip header line
+
+			List<Campaign> campaigns = new ArrayList<>();
+
 			while ((line = br.readLine()) != null) {
 				final String[] split = line.replace("\"", "").split(",");
 				final Campaign campaign = new Campaign(
 						split[0], split[1], split[2], split[3],
 						DiscountType.valueOf(Integer.parseInt(split[4])),
 						CampaignStatus.valueOf(Integer.parseInt(split[5])), split[6]);
-				campaignRepository.save(campaign);
+				campaigns.add(campaign);
+			}
+
+			if (!campaigns.isEmpty()) {
+				batchInsert(campaigns);
 			}
 		} catch (IOException e) {
 			throw new RuntimeException("ファイルが読み込めません", e);
@@ -98,9 +105,12 @@ public class CampaignService {
 								.addValue("name", c.getName(), Types.VARCHAR)
 								.addValue("code", c.getCode(), Types.VARCHAR)
 								.addValue("from_date", c.getFromDate(), Types.VARCHAR)
+								.addValue("to_date", c.getToDate(), Types.VARCHAR)
 								.addValue("discount_type", c.getDiscountType().getId(), Types.TINYINT)
+								.addValue("status", c.getStatus().getId(), Types.TINYINT)
 								.addValue("description", c.getDescription(), Types.VARCHAR)
-								.addValue("create_at", new Date(), Types.TIMESTAMP))
+								.addValue("create_at", new Date(), Types.TIMESTAMP)
+								.addValue("update_at", new Date(), Types.TIMESTAMP))
 						.toArray(SqlParameterSource[]::new));
 	}
 
