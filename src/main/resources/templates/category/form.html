@@ -1,60 +1,95 @@
 <!DOCTYPE html>
-<html
-  xmlns:th="http://www.thymeleaf.org"
-  xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-  layout:decorate="~{layout/layout}"
->
-  <th:block layout:fragment="content">
-    <h1 th:if="${category.id == null}">カテゴリー登録</h1>
-    <h1 th:if="${category.id != null}">カテゴリー編集</h1>
-    <hr />
-    <form
-      id="category-form"
-      th:action="@{/categories}"
-      th:method="@{${category.id == null} ? 'post' : 'put'}"
-      th:object="${category}"
-    >
-      <input type="hidden" th:field="*{id}" />
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layout/layout}">
+<th:block layout:fragment="content">
+  <h1 th:if="${category.id == null}">カテゴリー登録</h1>
+  <h1 th:if="${category.id != null}">カテゴリー編集</h1>
+  <hr />
+  <form id="category-form" th:action="@{/categories}" th:method="@{${category.id == null} ? 'post' : 'put'}"
+    th:object="${category}" onsubmit="return validateForm()">
+    <input type="hidden" th:field="*{id}" />
 
-      <div class="form-group">
-        <label for="code">コード</label>
-        <input
-          id="code"
-          name="code"
-          type="text"
-          class="form-control"
-          th:field="*{code}"
-        />
-      </div>
-      <div class="form-group">
-        <label for="name">名前</label>
-        <input
-          id="name"
-          name="name"
-          type="text"
-          class="form-control"
-          th:field="*{name}"
-        />
-      </div>
-      <div class="form-group">
-        <label for="display_order">表示順</label>
-        <input
-          id="display_order"
-          name="display_order"
-          type="number"
-          class="form-control"
-          th:field="*{displayOrder}"
-        />
-      </div>
-      <div class="form-group">
-        <label>説明</label>
-        <textarea
-          class="form-control"
-        ></textarea>
-      </div>
+    <div class="form-group">
+      <label for="code">コード</label>
+      <input id="code" name="code" type="text" class="form-control" th:field="*{code}" pattern="[A-Z]{3}-[0-9]{3}"
+        title="AAA-111 の形式で入力してください。" required />
+      <small class="form-text text-muted">例: AAA-111, BBB-999</small>
+    </div>
+    <div class="form-group">
+      <label for="name">名前</label>
+      <input id="name" name="name" type="text" class="form-control" th:field="*{name}" required />
+      <small id="name-error" class="text-danger"></small>
+    </div>
+    <div class="form-group">
+      <label for="display_order">表示順</label>
+      <input id="display_order" name="display_order" type="text" class="form-control" th:field="*{displayOrder}"
+        required pattern="[0-9]+" title="数字のみ入力してください。" />
+      <small class="form-text text-muted">例: 123</small>
+    </div>
+    <div class="form-group">
+      <label for="description">説明</label>
+      <textarea id="description" name="description" class="form-control" th:field="*{description}"></textarea>
+      <small id="description-error" class="text-danger"></small>
+    </div>
 
-      <input id="submit" type="submit" class="btn btn-success" value="保存">
-      <a th:href="@{/categories}" class="btn btn-default btn-secondary">戻る</a>
-    </form>
-  </th:block>
+    <button id="submit" type="submit" class="btn btn-success">保存</button>
+    <a th:href="@{/categories}" class="btn btn-default btn-secondary">戻る</a>
+  </form>
+
+  <script>
+    function validateForm() {
+      var codeInput = document.getElementById("code");
+      var nameInput = document.getElementById("name");
+      var displayOrderInput = document.getElementById("display_order");
+      var descriptionInput = document.getElementById("description");
+
+
+      var codeErrorElement = document.getElementById("code-error");
+      var nameErrorElement = document.getElementById("name-error");
+      var displayOrderErrorElement = document.getElementById("display_order-error");
+      var descriptionErrorElement = document.getElementById("description-error");
+
+      var isValid = true;
+
+      if (!codeInput.value.match(/[A-Z]{3}-[0-9]{3}/) || codeInput.value !== "") {
+        codeErrorElement.textContent = "AAA-111 の形式で入力してください。";
+        codeInput.classList.add("is-invalid");
+        isValid = false;
+      } else {
+        codeErrorElement.textContent = "";
+        codeInput.classList.remove("is-invalid");
+      }
+
+      if (nameInput.value.length > 2) {
+        nameErrorElement.textContent = "名前は20文字以内で入力してください。";
+        nameInput.classList.add("is-invalid");
+        isValid = false;
+      } else {
+        nameErrorElement.textContent = "";
+        nameInput.classList.remove("is-invalid");
+      }
+
+      if (!displayOrderInput.value.match(/^[0-9]+$/)) {
+        displayOrderErrorElement.textContent = "数字のみ入力してください。";
+        displayOrderInput.classList.add("is-invalid");
+        isValid = false;
+      } else {
+        displayOrderErrorElement.textContent = "";
+        displayOrderInput.classList.remove("is-invalid");
+      }
+
+      if (descriptionInput.value.length > 300) {
+        descriptionErrorElement.textContent = "説明は300文字以内で入力してください。";
+        descriptionInput.classList.add("is-invalid");
+        isValid = false;
+      } else {
+        descriptionErrorElement.textContent = "";
+        descriptionInput.classList.remove("is-invalid");
+      }
+
+      return isValid;
+    }
+  </script>
+</th:block>
+
 </html>
