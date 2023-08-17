@@ -2,6 +2,8 @@ $(document).ready(function () {
   let categoryId = document.getElementById("categoryId").getAttribute("val");
   let action = document.getElementById("action").getAttribute("val");
 
+  console.log(categoryId);
+  console.log(action);
   $.ajax({
     url: "/api/categories/" + categoryId,
     type: "GET",
@@ -26,6 +28,7 @@ $(document).ready(function () {
       })
       .get();
 
+    console.log(checkedIds);
     // 作成更新時に紐付けが存在しない場合はスキップ
     if (action == "true") {
       if (!validation(checkedIds)) {
@@ -36,15 +39,19 @@ $(document).ready(function () {
     let postData = {
       productIds: checkedIds,
     };
+    console.log(postData);
 
     $.ajax({
       url: "/api/categories/" + categoryId + "/updateCategoryProduct",
       type: "POST",
       dataType: "text",
       contentType: "application/json",
-      data: postData,
+      data: JSON.stringify(postData),
     }).done(function (data) {
       $("#success-message").text(data).show().fadeOut(3000);
+    }).fail(function () {
+      // APIコールが失敗した場合の処理
+      console.log("APIコールが失敗しました。");
     });
   });
 
