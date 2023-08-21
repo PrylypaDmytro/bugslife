@@ -5,6 +5,8 @@ import java.util.Optional;
 
 import org.hibernate.service.spi.ServiceException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Example;
+import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -32,13 +34,22 @@ public class ShopController {
 
 	@GetMapping
 	public String index(Model model, @RequestParam(name = "name", required = false) Optional<String> name) {
-		Shop probe = new Shop();
+		List<Shop> shops;
+
 		if (name.isPresent()) {
+			ExampleMatcher matcher = ExampleMatcher.matching()
+					.withMatcher("name", ExampleMatcher.GenericPropertyMatchers.contains().ignoreCase());
+
+			Shop probe = new Shop();
 			probe.setName(name.get());
+
+			shops = shopService.findAll(probe, matcher);
+		} else {
+			shops = shopService.findAll();
 		}
-		List<Shop> shops = shopService.findAll(probe);
+
 		model.addAttribute("listShop", shops);
-		model.addAttribute("name", name.isPresent() ? name.get() : null);
+		model.addAttribute("name", name.orElse(null));
 		return "shop/index";
 	}
 
