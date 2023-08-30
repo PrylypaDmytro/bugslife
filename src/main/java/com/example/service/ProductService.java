@@ -15,6 +15,7 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 
 import com.example.entity.ProductWithCategoryName;
@@ -72,54 +73,58 @@ public class ProductService {
 				root.get("weight"),
 				root.get("height"),
 				root.get("price"),
-				categoryJoin.get("name").alias("categoryName")).where(builder.equal(root.get("shopId"), shopId));
+				builder.function("GROUP_CONCAT", String.class, categoryJoin.get("name")).alias("categoryName"))
+				.where(builder.equal(root.get("shopId"), shopId));
 
-		// formの値を元に検索条件を設定する
+		// Form-based search criteria
+		List<Predicate> predicates = new ArrayList<>();
+
 		if (!StringUtils.isEmpty(form.getName())) {
-			// name で部分一致検索
-			query.where(builder.like(builder.lower(root.get("name")), "%" + form.getName().toLowerCase() + "%"));
+			predicates.add(builder.like(builder.lower(root.get("name")), "%" + form.getName().toLowerCase() + "%"));
 		}
 
 		if (!StringUtils.isEmpty(form.getCode())) {
-			// code で部分一致検索
-			query.where(builder.like(builder.lower(root.get("code")), "%" + form.getCode().toLowerCase() + "%"));
+			predicates.add(builder.like(builder.lower(root.get("code")), "%" + form.getCode().toLowerCase() + "%"));
 		}
 
 		if (form.getCategories() != null && form.getCategories().size() > 0) {
-			// categories で完全一致検索
-			query.where(categoryJoin.get("id").in(form.getCategories()));
+			predicates.add(categoryJoin.get("id").in(form.getCategories()));
 		}
 
-		// weight で範囲検索
 		if (form.getWeight1() != null || form.getWeight2() != null) {
 			if (form.getWeight1() != null && form.getWeight2() != null) {
-				query.where(builder.between(root.get("weight"), form.getWeight1(), form.getWeight2()));
+				predicates.add(builder.between(root.get("weight"), form.getWeight1(), form.getWeight2()));
 			} else if (form.getWeight1() != null) {
-				query.where(builder.greaterThanOrEqualTo(root.get("weight"), form.getWeight1()));
+				predicates.add(builder.greaterThanOrEqualTo(root.get("weight"), form.getWeight1()));
 			} else if (form.getWeight2() != null) {
-				query.where(builder.lessThanOrEqualTo(root.get("weight"), form.getWeight2()));
+				predicates.add(builder.lessThanOrEqualTo(root.get("weight"), form.getWeight2()));
 			}
 		}
 
-		// height で範囲検索
 		if (form.getHeight1() != null || form.getHeight2() != null) {
 			if (form.getHeight1() != null && form.getHeight2() != null) {
-				query.where(builder.between(root.get("height"), form.getHeight1(), form.getHeight2()));
+				predicates.add(builder.between(root.get("height"), form.getHeight1(), form.getHeight2()));
 			} else if (form.getHeight1() != null) {
-				query.where(builder.greaterThanOrEqualTo(root.get("height"), form.getHeight1()));
+				predicates.add(builder.greaterThanOrEqualTo(root.get("height"), form.getHeight1()));
 			} else if (form.getHeight2() != null) {
-				query.where(builder.lessThanOrEqualTo(root.get("height"), form.getHeight2()));
+				predicates.add(builder.lessThanOrEqualTo(root.get("height"), form.getHeight2()));
 			}
 		}
 
-		// price で範囲検索
 		if (form.getPrice1() != null && form.getPrice2() != null) {
-			query.where(builder.between(root.get("price"), form.getPrice1(), form.getPrice2()));
-		} else if (form.getPrice1() != null) {
-			query.where(builder.greaterThanOrEqualTo(root.get("price"), form.getPrice1()));
-		} else if (form.getPrice2() != null) {
-			query.where(builder.lessThanOrEqualTo(root.get("price"), form.getPrice2()));
+			predicates.add(builder.between(root.get("price"), form.getPrice1(), form.getPrice2()));
+		} else {
+			if (form.getPrice1() != null) {
+				predicates.add(builder.greaterThanOrEqualTo(root.get("price"), form.getPrice1()));
+			}
+			if (form.getPrice2() != null) {
+				predicates.add(builder.lessThanOrEqualTo(root.get("price"), form.getPrice2()));
+			}
 		}
+
+		query.where(builder.and(predicates.toArray(new Predicate[0])));
+
+		query.groupBy(root.get("id")); // Group by product to concatenate categories
 
 		return entityManager.createQuery(query).getResultList();
 	}
