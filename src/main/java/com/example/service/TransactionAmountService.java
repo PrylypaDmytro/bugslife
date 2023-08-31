@@ -97,13 +97,13 @@ public class TransactionAmountService {
 	 * TransactionalAmountの収支合計を取得する
 	 *
 	 * @param company
-	 * @return Integer
+	 * @return Double
 	 */
-	public Integer getSumTransactionalAmounts(Company company) {
+	public Double getSumTransactionalAmounts(Company company) {
 		List<TransactionAmount> tAmountList = this.findByCompany(company);
 
 		// 収入の場合は加算、支出の場合は減算
-		Integer sum = 0;
+		Double sum = 0.0;
 		for (TransactionAmount tAmount : tAmountList) {
 			if (tAmount.getPlusMinus()) {
 				sum += tAmount.getPrice();
@@ -113,7 +113,8 @@ public class TransactionAmountService {
 		}
 
 		// 表示はXXX千円とするので、1000で割って余りは切り捨てて丸める
-		sum = (int)Math.round((double)sum / 1000);
+		// sum = Math.round(sum / (double)1000);
+		sum = sum / 1000;
 
 		return sum;
 	}
@@ -121,13 +122,13 @@ public class TransactionAmountService {
 	/**
 	 * 収支比率を計算する
 	 */
-	public Integer getRatioTransactionalAmounts(Company company) {
+	public Double getRatioTransactionalAmounts(Company company) {
 		// 現在の取得を行う
 		List<TransactionAmount> tAmountList = this.findByCompany(company);
 
 		// 収入と支出の比率を計算する
-		Integer incomSum = 0;
-		Integer expenseSum = 0;
+		Double incomSum = 0.0;
+		Double expenseSum = 0.0;
 		for (TransactionAmount tAmount : tAmountList) {
 			if (tAmount.getPlusMinus()) {
 				incomSum += tAmount.getPrice();
@@ -135,8 +136,8 @@ public class TransactionAmountService {
 				expenseSum += tAmount.getPrice();
 			}
 		}
-		double ratio = incomSum / (expenseSum + incomSum);
-		return (int)Math.round(ratio * 100);
+		double ratio = (double)incomSum / (expenseSum + incomSum);
+		return ratio * 100;
 	}
 
 	/**
@@ -194,7 +195,7 @@ public class TransactionAmountService {
 
 				// 取引金額のインスタンスにCSVファイルから読み取ったデータをセットする
 				transactionAmount.setPlusMinus(BooleanUtils.toBoolean(split[0]));
-				transactionAmount.setPrice(Integer.parseInt(split[1]));
+				transactionAmount.setPrice(Double.parseDouble(split[1]));
 				transactionAmount.setDueDate(sdFormat.parse(split[2]));
 				transactionAmount.setHasPaid(Boolean.parseBoolean(split[3]));
 				transactionAmount.setMemo(split[4]);

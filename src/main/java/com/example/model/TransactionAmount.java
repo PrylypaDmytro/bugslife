@@ -50,7 +50,7 @@ public class TransactionAmount extends TimeEntity implements Serializable {
 
 	// 金額
 	@Column(name = "price", nullable = false)
-	private Integer price;
+	private Double price;
 
 	// 期日
 	@Column(name = "due_date", nullable = false)
