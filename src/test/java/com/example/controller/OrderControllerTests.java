@@ -123,7 +123,7 @@ public class OrderControllerTests {
 		product.setCode("42");
 		product.setWeight(42);
 		product.setHeight(42);
-		product.setPrice(42);
+		product.setPrice(42.0);
 		product.setTaxType(1);
 		productService.save(product);
 		mvc.perform(
@@ -147,7 +147,8 @@ public class OrderControllerTests {
 	 */
 	@Test
 	public void getUpdateInValidTest(@Autowired MockMvc mvc) throws Exception {
-		Assertions.assertThrows(ServletException.class, () -> mvc.perform(MockMvcRequestBuilders.get("/orders/999/edit")));
+		Assertions.assertThrows(ServletException.class,
+				() -> mvc.perform(MockMvcRequestBuilders.get("/orders/999/edit")));
 	}
 
 	/**
@@ -242,7 +243,8 @@ public class OrderControllerTests {
 	@Test
 	public void deleteInValidTest(@Autowired MockMvc mvc) throws Exception {
 		Assertions.assertThrows(ServletException.class, () -> mvc
-				.perform(MockMvcRequestBuilders.delete("/orders/999").with(SecurityMockMvcRequestPostProcessors.csrf())));
+				.perform(MockMvcRequestBuilders.delete("/orders/999")
+						.with(SecurityMockMvcRequestPostProcessors.csrf())));
 	}
 
 	/**
@@ -266,7 +268,8 @@ public class OrderControllerTests {
 		orderService.save(order);
 
 		mvc.perform(
-				MockMvcRequestBuilders.delete("/orders/" + order.getId()).with(SecurityMockMvcRequestPostProcessors.csrf()))
+				MockMvcRequestBuilders.delete("/orders/" + order.getId())
+						.with(SecurityMockMvcRequestPostProcessors.csrf()))
 				.andExpect(status().isFound())
 				.andExpect(redirectedUrl("/orders"))
 				.andExpect(flash().attribute("success", Message.MSG_SUCESS_DELETE));
