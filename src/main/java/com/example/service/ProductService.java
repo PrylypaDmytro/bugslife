@@ -17,6 +17,7 @@ import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 
 import com.example.entity.ProductWithCategoryName;
 import com.example.form.ProductForm;
@@ -88,7 +89,22 @@ public class ProductService {
 		}
 
 		if (form.getCategories() != null && form.getCategories().size() > 0) {
-			predicates.add(categoryJoin.get("id").in(form.getCategories()));
+			List<Predicate> categoryPredicates = new ArrayList<>();
+
+			for (Long categoryId : form.getCategories()) {
+				// Create a subquery to count matching categories for each product
+				Subquery<Long> subquery = query.subquery(Long.class);
+				Root<CategoryProduct> subCategoryProductRoot = subquery.from(CategoryProduct.class);
+				subquery.select(builder.count(subCategoryProductRoot))
+						.where(builder.and(
+								builder.equal(subCategoryProductRoot.get("product"), root),
+								builder.equal(subCategoryProductRoot.get("category").get("id"), categoryId)));
+
+				// Add the subquery result to the list of category predicates
+				categoryPredicates.add(builder.greaterThanOrEqualTo(subquery, 1L));
+			}
+
+			predicates.add(builder.and(categoryPredicates.toArray(new Predicate[0])));
 		}
 
 		if (form.getWeight1() != null || form.getWeight2() != null) {
