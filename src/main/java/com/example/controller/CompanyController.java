@@ -63,11 +63,11 @@ public class CompanyController {
 				model.addAttribute("listTAmount", listTAmounts);
 
 				// 収支合計を取得
-				Integer tAmountsSum = transactionAmountService.getSumTransactionalAmounts(company.get());
+				Double tAmountsSum = transactionAmountService.getSumTransactionalAmounts(company.get());
 				model.addAttribute("tAmountsSum", tAmountsSum);
 
 				// 収支比率を取得
-				Integer tAmountsRatio = transactionAmountService.getRatioTransactionalAmounts(company.get());
+				Double tAmountsRatio = transactionAmountService.getRatioTransactionalAmounts(company.get());
 				model.addAttribute("tAmountsRatio", tAmountsRatio);
 			}
 			return "company/show";
@@ -160,7 +160,7 @@ public class CompanyController {
 	/**
 	 * 取引先情報の削除処理
 	 *
-	 * @param id 取引先ID
+	 * @param id                 取引先ID
 	 * @param redirectAttributes リダイレクト先に値を渡す
 	 * @return
 	 */
