@@ -98,7 +98,6 @@ public class CampaignService {
 	private int[] batchInsert(List<Campaign> campaigns) {
 		String sql = "INSERT INTO campaigns (name, code, from_date, to_date, discount_type, status, description, create_at, update_at)"
 				+ " VALUES(:name, :code, :from_date, :to_date, :discount_type, :status, :description, :create_at, :update_at)";
-		// FIXME: ここでエラーが出る インサート文の問題？
 		return jdbcTemplate.batchUpdate(sql,
 				campaigns.stream()
 						.map(c -> new MapSqlParameterSource()

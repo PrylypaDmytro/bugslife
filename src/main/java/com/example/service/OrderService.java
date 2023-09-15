@@ -8,19 +8,33 @@ import com.example.enums.OrderStatus;
 import com.example.enums.PaymentStatus;
 import com.example.form.OrderForm;
 import com.example.model.Order;
+import com.example.model.OrderDelivery;
 import com.example.model.OrderPayment;
 import com.example.model.OrderProduct;
 import com.example.repository.OrderRepository;
 import com.example.repository.ProductRepository;
+import com.example.repository.OrderDeliveryRepository;
 
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
 import java.util.List;
 import java.util.Optional;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 
 @Service
 @Transactional(readOnly = true)
 public class OrderService {
+
+	@Autowired
+	private OrderDeliveryRepository orderDeliveryRepository;
 
 	@Autowired
 	private OrderRepository orderRepository;
@@ -34,6 +48,10 @@ public class OrderService {
 
 	public Optional<Order> findOne(Long id) {
 		return orderRepository.findById(id);
+	}
+
+	public List<OrderDelivery> findByStatus(String string) {
+		return orderDeliveryRepository.findByStatus(string);
 	}
 
 	@Transactional(readOnly = false)
@@ -141,6 +159,67 @@ public class OrderService {
 		order.setPaid(paid);
 		order.setPaymentStatus(paymentStatus);
 		orderRepository.save(order);
+	}
+
+	/**
+	 * CSVインポート処理
+	 *
+	 * @param file
+	 * @throws IOException
+	 */
+	@Transactional
+	public List<OrderDelivery> importCSV(MultipartFile file) throws IOException, ParseException {
+
+		List<OrderDelivery> orderDeliveries = new ArrayList<>();
+
+		try (BufferedReader br = new BufferedReader(
+				new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
+			String line = br.readLine(); // Skip header line
+
+			SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd"); // Change the date format as needed
+
+			while ((line = br.readLine()) != null) {
+				final String[] split = line.replace("\"", "").split(",");
+				if (split.length >= 5) {
+					Integer orderId = Integer.parseInt(split[0]);
+					String shippingCode = split[1];
+					Date shippingDate = dateFormat.parse(split[2]);
+					Date deliveryDate = dateFormat.parse(split[3]);
+					String deliveryTimezone = split[4];
+					String status = "ordered";
+					boolean checked = false;
+					String uploadStatus = "";
+					OrderDelivery orderDelivery = new OrderDelivery(orderId, shippingCode, shippingDate, deliveryDate,
+							deliveryTimezone, status, checked, uploadStatus);
+					orderDeliveries.add(orderDelivery);
+				}
+			}
+
+			// this is batch proccessing. not important now. It working, adding the data
+			// from csv to db.But i need to add the data from the file into the page.
+			// if (!orderDeliveries.isEmpty()) {
+			// orderDeliveryRepository.saveAll(orderDeliveries);
+			// }
+		} catch (IOException | ParseException e) {
+			throw new RuntimeException("ファイルが読み込めません", e);
+		}
+
+		return orderDeliveries;
+	}
+
+	// Process CSV file (validation, parsing, and storing data)
+	public void processCSV(MultipartFile file) {
+		// Implement CSV processing logic here
+	}
+
+	// Update shipping information based on user selection
+	public void updateShippingInfo(long orderId) {
+		Optional<OrderDelivery> existingOrder = orderDeliveryRepository.findById(orderId);
+
+		// If the order does not exist, create a new order with shipping information
+		OrderDelivery newDelivery = new OrderDelivery();
+		newDelivery.setOrderId((int)orderId);
+
 	}
 
 }
