@@ -1,0 +1,7 @@
+orderId,shippingCode,shippingDate,deliveryDate,deliveryTimezone
+1,SH001,2023-09-10,2023-09-12,Morning
+2,SH002,2023-09-11,2023-09-13,Afternoon
+3,SH003,2023-09-12,2023-09-14,Evening
+4,SH004,2023-09-14,2023-09-15,Evening
+5,SH005,2023-09-14,2023-09-15,Evening
+90,SH004,2023-09-14,2023-09-15,morning
