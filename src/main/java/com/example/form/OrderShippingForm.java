@@ -5,14 +5,11 @@ import java.util.List;
 
 import com.example.model.OrderDelivery;
 
-import jakarta.validation.constraints.NotEmpty;
+// import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 
 @Data
 public class OrderShippingForm {
-	@NotEmpty(message = "必ず一つは選択してください。")
-	private List<Boolean> checkedList = new ArrayList<Boolean>();
-	// private CampaignStatus nextStatus = CampaignStatus.valueOf(0);
 
 	private List<OrderDelivery> orderShippingList;
 

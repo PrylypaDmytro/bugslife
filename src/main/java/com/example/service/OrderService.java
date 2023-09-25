@@ -7,6 +7,7 @@ import com.example.constants.TaxType;
 import com.example.enums.OrderStatus;
 import com.example.enums.PaymentStatus;
 import com.example.form.OrderForm;
+import com.example.form.OrderForm.UpdateStatus;
 import com.example.model.Order;
 import com.example.model.OrderDelivery;
 import com.example.model.OrderPayment;
@@ -48,10 +49,6 @@ public class OrderService {
 
 	public Optional<Order> findOne(Long id) {
 		return orderRepository.findById(id);
-	}
-
-	public List<OrderDelivery> findByStatus(String string) {
-		return orderDeliveryRepository.findByStatus(string);
 	}
 
 	@Transactional(readOnly = false)
@@ -186,11 +183,10 @@ public class OrderService {
 					Date shippingDate = dateFormat.parse(split[2]);
 					Date deliveryDate = dateFormat.parse(split[3]);
 					String deliveryTimezone = split[4];
-					String status = "ordered";
 					boolean checked = false;
 					String uploadStatus = "";
 					OrderDelivery orderDelivery = new OrderDelivery(orderId, shippingCode, shippingDate, deliveryDate,
-							deliveryTimezone, status, checked, uploadStatus);
+							deliveryTimezone, checked, uploadStatus);
 					orderDeliveries.add(orderDelivery);
 				}
 			}
@@ -219,6 +215,35 @@ public class OrderService {
 		// If the order does not exist, create a new order with shipping information
 		OrderDelivery newDelivery = new OrderDelivery();
 		newDelivery.setOrderId((int)orderId);
+
+	}
+
+	@Transactional
+	public String saveOrderDelivery(OrderDelivery orderDelivery) {
+		// Check if an existing record with the same data exists
+		Optional<Order> existingOrder = orderRepository.findById(
+				orderDelivery.getOrderId());
+
+		if (existingOrder.isPresent()) {
+			var existingOrderStatus = existingOrder.get().getPaymentStatus();
+			if (existingOrderStatus.equals(OrderStatus.COMPLETED)) {
+				return "error";
+			} else {
+				try {
+					orderDeliveryRepository.save(orderDelivery);
+					if (!existingOrder.get().getStatus().equals(OrderStatus.SHIPPED)) {
+						existingOrder.get().setStatus(OrderStatus.SHIPPED);
+						orderRepository.save(existingOrder.get());
+					}
+					return "success";
+				} catch (Exception e) {
+					e.printStackTrace();
+					return "error";
+				}
+			}
+		} else {
+			return "error";
+		}
 
 	}
 

@@ -199,26 +199,31 @@ public class OrderController {
 
 	@PutMapping("/shipping")
 	public String updateShippingInfo(@ModelAttribute("orderShippingData") OrderShippingForm orderShippingForm,
-			RedirectAttributes redirectAttributes) {
-		// Get the list of booleans representing which checkboxes are checked
-		List<Boolean> checkedList = orderShippingForm.getCheckedList();
+			RedirectAttributes redirectAttributes, Model model) {
 
 		// Get the list of orderShippingData
 		List<OrderDelivery> orderShippingList = orderShippingForm.getOrderShippingList();
 
 		// Iterate through the checkedList and orderShippingList simultaneously
-		for (int i = 0; i < checkedList.size(); i++) {
-			boolean isChecked = checkedList.get(i);
-			if (isChecked) {
+		for (int i = 0; i < orderShippingList.size(); i++) {
+			if (orderShippingList.get(i).isChecked()) {
 				// Checkbox is checked for this row, save the data to the database
 				OrderDelivery orderDelivery = orderShippingList.get(i);
-				orderShippingService.saveOrderDelivery(orderDelivery);
+				String result = orderService.saveOrderDelivery(orderDelivery);
+				// save the result of the update to the uploadStatus field
+				orderShippingForm.getOrderShippingList().get(i).setUploadStatus(result);
 			}
 		}
 
-		// Redirect to a success page or return a response as needed
-		redirectAttributes.addFlashAttribute("message", "Shipping information updated successfully");
-		return "redirect:/orders/shipping";
+		model.addAttribute("orderShippingData", orderShippingForm);
+		// think about the way to show error message when there is broken row in csv
+		// file.
+		// if left as it is supposed to be, there is possibility of page being
+		// overflooded with errors
+		// and hard to read. I have few ideas but i will need to edit html file.
+		// model.addAttribute("validationError", "Shipping information updated
+		// successfully");
+		return "order/shipping";
 	}
 
 	@PostMapping("/shipping/download")
