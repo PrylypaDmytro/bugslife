@@ -34,8 +34,12 @@ import com.example.enums.PaymentMethod;
 import com.example.enums.PaymentStatus;
 import com.example.form.OrderForm;
 import com.example.form.OrderShippingForm;
+import com.example.model.Company;
 import com.example.model.Order;
 import com.example.model.OrderDelivery;
+import com.example.model.OrderPayment;
+import com.example.model.TransactionAmount;
+import com.example.service.PaymentAmountService;
 import com.example.service.OrderService;
 import com.example.service.ProductService;
 
@@ -54,6 +58,9 @@ public class OrderController {
 	@Autowired
 	private ProductService productService;
 
+	@Autowired
+	private PaymentAmountService paymentAmountService;
+
 	@ModelAttribute
 	ShippingListDto setFormDto() {
 		return new ShippingListDto();
@@ -71,7 +78,24 @@ public class OrderController {
 		if (id != null) {
 			Optional<Order> order = orderService.findOne(id);
 			model.addAttribute("order", order.get());
+
+			List<OrderPayment> listOpAmounts = paymentAmountService.findByOrder(order.get());
+			model.addAttribute("listOpAmount", listOpAmounts);
+
+			// 収支合計を取得
+			// Double tAmountsSum =
+			// transactionAmountService.getSumTransactionalAmounts(company.get());
+			// model.addAttribute("tAmountsSum", tAmountsSum);
+
+			// 収支比率を取得
+			// Double tAmountsRatio =
+			// transactionAmountService.getRatioTransactionalAmounts(company.get());
+			// model.addAttribute("tAmountsRatio", tAmountsRatio);
+
+			// need to add here logic for showing payment amount
 		}
+		// need to add here logic for showing payment amount
+
 		return "order/show";
 	}
 

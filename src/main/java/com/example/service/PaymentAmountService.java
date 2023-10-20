@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 
 import com.example.constants.Validate;
 import com.example.enums.FileImportStatus;
+import com.example.enums.PaymentMethod;
 import com.example.enums.ServiceType;
 import com.example.model.FileImportInfo;
 import com.example.model.Order;
@@ -18,6 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.Date;
@@ -201,6 +203,12 @@ public class PaymentAmountService {
 				Date parseDate = sdFormat.parse(split[2]);
 				orderPayment.setPaidAt(new Timestamp(parseDate.getTime()));
 
+				if (orderPayment.getMethod().equals(PaymentMethod.CREDIT_CARD)) {
+					orderPayment.setType("Authorization");
+				} else if (orderPayment.getMethod().equals(PaymentMethod.PAYMENT_ON_DELIVERY)) {
+					orderPayment.setType("Instant");
+				}
+				// orderPayment.setType(line);
 				// OrderPayment.setHasPaid(Boolean.parseBoolean(split[3]));
 				// OrderPayment.setMemo(split[4]);
 
@@ -219,5 +227,9 @@ public class PaymentAmountService {
 			updatedImp.setEndDatetime(LocalDateTime.now());
 			fileImportInfoRepository.save(updatedImp);
 		}
+	}
+
+	public List<OrderPayment> findByOrder(Order order) {
+		return paymentAmountRepository.findByOrder(order);
 	}
 }

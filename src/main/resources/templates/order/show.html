@@ -95,12 +95,12 @@
         </tr>
       </thead>
       <tbody>
-        <tr th:each="opAmount : ${listTAmount}">
-          <td th:text="${opAmount.plusMinus ? '収入' : '支出'}"></td>
-          <td th:text="${opAmount.price}"></td>
-          <td th:text="${#dates.format(opAmount.dueDate, 'yyyy-MM-dd')}"></td>
+        <tr th:each="opAmount : ${listOpAmount}">
+          <td th:text="${opAmount.type}"></td>
+          <td th:text="${opAmount.paid}"></td>
+          <td th:text="${#dates.format(opAmount.paidAt, 'yyyy-MM-dd')}"></td>
           <td
-            th:text="${opAmount.hasPaid ? opAmount.plusMinus ? '入金済' : '支払済' : opAmount.plusMinus ? '未納' : '未払'}"
+            th:text="${opAmount.method}"
           ></td>
           <td>
             <a
