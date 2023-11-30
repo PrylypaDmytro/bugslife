@@ -61,5 +61,73 @@
     </form>
     <a class="btn btn-link" th:href="@{/orders}">一覧へ戻る</a>
     <br />
+
+    <h1>支払い金額一覧</h1>
+    <hr />
+    <a
+      class="btn btn-info"
+      th:href="@{/paymentAmounts/{o_id}/new(o_id = ${order.id})}"
+      >支払い金額 新規追加</a
+    ><br /><br />
+
+    <div class="row">
+      <form th:method="post" th:action="@{/paymentAmounts/{o_id}/upload_csv(o_id = ${order.id})}" enctype="multipart/form-data" class="row col-md-8">
+        <div class="col-md-9">
+          <input type="file" name="csv_file" accept=".csv" class="form-control">
+        </div>
+        <div class="col-md-3">
+          <input type="submit" name="upload_csv" value="ファイルをアップロード" class="btn btn-warning">
+        </div>
+      </form>
+      <form th:method="post" th:action="@{/paymentAmounts/download}" enctype="multipart/form-data" class="col-md-4">
+          <input type="submit" value="テンプレートをダウンロード" class="btn btn-warning">
+      </form>
+    </div>
+
+    <table class="table">
+      <thead>
+        <tr>
+          <th>支払い方法</th>
+          <th>支払い金額</th>
+          <th>支払い日時</th>
+          <th>支払い情報ステータス</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="opAmount : ${listOpAmount}">
+          <td th:text="${opAmount.type}"></td>
+          <td th:text="${opAmount.paid}"></td>
+          <td th:text="${#dates.format(opAmount.paidAt, 'yyyy-MM-dd')}"></td>
+          <td
+            th:text="${opAmount.method}"
+          ></td>
+          <td>
+            <a
+              class="btn btn-primary"
+              th:href="@{/paymentAmounts/{id}(id = ${opAmount.id})}"
+              >詳細</a
+            >
+            <a
+              class="btn btn-secondary"
+              th:href="@{/paymentAmounts/{id}/edit(id = ${opAmount.id})}"
+              >編集</a
+            >
+            <form
+              class="d-inline"
+              th:action="@{/paymentAmounts/{id}(id = ${opAmount.id})}"
+              th:method="delete"
+            >
+              <input type="hidden" th:field="${order.id}" />
+              <button class="btn btn-danger" type="submit">削除</button>
+            </form>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <h4>商品金額 : </h4>
+    <h4>受注金額 : <span th:text="${tAmountsSum}"></span>千円</h4>
+    <h4>支払い金額 : <span th:text="${tAmountsRatio}"></span>%</h4>
+    <h4></h4>
   </th:block>
 </html>
