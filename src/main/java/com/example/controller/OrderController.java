@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -11,7 +12,6 @@ import java.util.Optional;
 import org.hibernate.service.spi.ServiceException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -34,11 +34,9 @@ import com.example.enums.PaymentMethod;
 import com.example.enums.PaymentStatus;
 import com.example.form.OrderForm;
 import com.example.form.OrderShippingForm;
-import com.example.model.Company;
 import com.example.model.Order;
 import com.example.model.OrderDelivery;
 import com.example.model.OrderPayment;
-import com.example.model.TransactionAmount;
 import com.example.service.PaymentAmountService;
 import com.example.service.OrderService;
 import com.example.service.ProductService;
@@ -81,20 +79,7 @@ public class OrderController {
 
 			List<OrderPayment> listOpAmounts = paymentAmountService.findByOrder(order.get());
 			model.addAttribute("listOpAmount", listOpAmounts);
-
-			// 収支合計を取得
-			// Double tAmountsSum =
-			// transactionAmountService.getSumTransactionalAmounts(company.get());
-			// model.addAttribute("tAmountsSum", tAmountsSum);
-
-			// 収支比率を取得
-			// Double tAmountsRatio =
-			// transactionAmountService.getRatioTransactionalAmounts(company.get());
-			// model.addAttribute("tAmountsRatio", tAmountsRatio);
-
-			// need to add here logic for showing payment amount
 		}
-		// need to add here logic for showing payment amount
 
 		return "order/show";
 	}
@@ -182,6 +167,30 @@ public class OrderController {
 		}
 	}
 
+	// ===================== Shipping =====================
+
+	// 未発送データを取得
+	@PostMapping("/shipping/getUnshippedData")
+	public String getUnshippedData(RedirectAttributes redirectAttributes, Model model) {
+		try {
+			List<OrderDelivery> orderDeliveries = orderService.getUnshippedData();
+
+			if (!orderDeliveries.isEmpty()) {
+
+				orderShippingData.setOrderShippingList(orderDeliveries);
+				// Add the list to the model to display on the HTML page
+				model.addAttribute("orderShippingData", orderShippingData);
+			}
+		} catch (Throwable e) {
+			redirectAttributes.addFlashAttribute("error", e.getMessage());
+			e.printStackTrace();
+			return "redirect:/orders/shipping";
+		}
+
+		return "order/shipping";
+	}
+
+	// 発送一覧を表示する
 	@GetMapping("/shipping")
 	public String shipping(Model model) {
 		// List<Order> all = orderService.findAll();
@@ -189,6 +198,7 @@ public class OrderController {
 		return "order/shipping";
 	}
 
+	// CSVファイルをアップロードする
 	@PostMapping("/shipping")
 	public String uploadFile(@RequestParam("file") MultipartFile uploadFile, RedirectAttributes redirectAttributes,
 			Model model) {
@@ -211,6 +221,9 @@ public class OrderController {
 				orderShippingData.setOrderShippingList(orderDeliveries);
 				// Add the list to the model to display on the HTML page
 				model.addAttribute("orderShippingData", orderShippingData);
+			} else {
+				redirectAttributes.addFlashAttribute("error", "データがありません。");
+				return "redirect:/orders/shipping";
 			}
 		} catch (Throwable e) {
 			redirectAttributes.addFlashAttribute("error", e.getMessage());
@@ -221,13 +234,17 @@ public class OrderController {
 		return "order/shipping";
 	}
 
+	// データを更新する
 	@PutMapping("/shipping")
 	public String updateShippingInfo(@ModelAttribute("orderShippingData") OrderShippingForm orderShippingForm,
 			RedirectAttributes redirectAttributes, Model model) {
 
 		// Get the list of orderShippingData
 		List<OrderDelivery> orderShippingList = orderShippingForm.getOrderShippingList();
-
+		if (orderShippingList.isEmpty()) {
+			redirectAttributes.addFlashAttribute("error", "データがありません。");
+			return "redirect:/orders/shipping";
+		}
 		// Iterate through the checkedList and orderShippingList simultaneously
 		for (int i = 0; i < orderShippingList.size(); i++) {
 			if (orderShippingList.get(i).isChecked()) {
@@ -240,18 +257,13 @@ public class OrderController {
 		}
 
 		model.addAttribute("orderShippingData", orderShippingForm);
-		// think about the way to show error message when there is broken row in csv
-		// file.
-		// if left as it is supposed to be, there is possibility of page being
-		// overflooded with errors
-		// and hard to read. I have few ideas but i will need to edit html file.
-		// model.addAttribute("validationError", "Shipping information updated
-		// successfully");
+		model.addAttribute("validationError", "Shipping information updatedsuccessfully");
 		return "order/shipping";
 	}
 
+	// テンプレートのCSVファイルをダウンロードする
 	@PostMapping("/shipping/download")
-	public String downloadTemplate(HttpServletResponse response, RedirectAttributes redirectAttributes) {
+	public void downloadTemplate(HttpServletResponse response, RedirectAttributes redirectAttributes) {
 		try (OutputStream os = response.getOutputStream();) {
 			Path filePath = new ClassPathResource("static/templates/order_shipping_template.csv").getFile().toPath();
 			byte[] fb1 = Files.readAllBytes(filePath);
@@ -265,7 +277,44 @@ public class OrderController {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		return null;
+	}
+
+	@PostMapping("/shipping/convertToCsv")
+	public void convertToCsv(HttpServletResponse response, RedirectAttributes redirectAttributes) {
+		try (OutputStream os = response.getOutputStream()) {
+			List<OrderDelivery> unshippedOrders = orderService.getUnshippedData();
+			// Prepare a StringBuilder to construct CSV content
+			StringBuilder csvContent = new StringBuilder();
+
+			// Append CSV headers
+			csvContent.append("Order ID,Item,Quantity\n"); // Example headers
+
+			// Append data rows for each unshipped order
+			for (OrderDelivery orderDelivery : unshippedOrders) {
+				// Extracting values from OrderDelivery object
+				long orderId = orderDelivery.getOrder().getId();
+				String shippingCode = orderDelivery.getShippingCode();
+				SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+				String shippingDate = sdf.format(orderDelivery.getShippingDate());
+				String deliveryDate = sdf.format(orderDelivery.getDeliveryDate());
+				String deliveryTimezone = orderDelivery.getDeliveryTimezone();
+
+				// Format data and append to the CSV content
+				String orderRow = String.format("%d,%s,%s,%s,%s\n", orderId, shippingCode, shippingDate, deliveryDate,
+						deliveryTimezone);
+				csvContent.append(orderRow);
+			}
+
+			// Setting up response headers for file download
+			response.setContentType("text/csv");
+			response.setHeader("Content-Disposition", "attachment; filename=unshipped_orders.csv");
+
+			// Write the CSV content to the response output stream
+			os.write(csvContent.toString().getBytes());
+			os.flush();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 }

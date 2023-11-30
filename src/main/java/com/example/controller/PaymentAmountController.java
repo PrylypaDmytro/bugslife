@@ -26,16 +26,10 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.example.constants.Message;
-import com.example.model.Company;
 import com.example.model.OrderPayment;
 import com.example.service.OrderService;
 import com.example.service.PaymentAmountService;
-
 import com.example.model.Order;
-import com.example.model.OrderPayment; // paymentAmount (TransanctionAmount)
-import com.example.service.OrderService;
-import com.example.service.PaymentAmountService;
-
 import jakarta.servlet.http.HttpServletResponse;
 
 @Controller

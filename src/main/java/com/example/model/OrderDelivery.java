@@ -4,6 +4,8 @@ import java.io.Serializable;
 import java.lang.String;
 import java.util.Date;
 
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Component;
 
@@ -12,6 +14,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import lombok.Data;
@@ -34,9 +38,6 @@ public class OrderDelivery extends TimeEntity implements Serializable {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@Column(name = "order_id", nullable = false)
-	private Integer orderId;
-
 	@Column(name = "shipping_code", nullable = false)
 	private String shippingCode;
 
@@ -57,9 +58,8 @@ public class OrderDelivery extends TimeEntity implements Serializable {
 	@Transient
 	private String uploadStatus;
 
-	public OrderDelivery(Integer orderId, String shippingCode, Date shippingDate, Date deliveryDate,
+	public OrderDelivery(String shippingCode, Date shippingDate, Date deliveryDate,
 			String deliveryTimezone, boolean checked, String uploadStatus) {
-		this.orderId = orderId;
 		this.shippingCode = shippingCode;
 		this.shippingDate = shippingDate;
 		this.deliveryDate = deliveryDate;
@@ -67,5 +67,10 @@ public class OrderDelivery extends TimeEntity implements Serializable {
 		this.checked = checked;
 		this.uploadStatus = uploadStatus;
 	}
+
+	@ManyToOne
+	@JoinColumn(name = "order_id", nullable = false) // Name of the column in OrderDeliveries table referencing Order //
+	@OnDelete(action = OnDeleteAction.CASCADE)
+	private Order order;
 
 }

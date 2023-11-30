@@ -10,7 +10,7 @@
     <a th:href="@{/orders}" class="btn btn-default">Back</a><br /><br />
 
     <div class="mb-4">
-      <div class="row">
+      <div class="row justify-content-space-between">
         <!-- CSVの読み込み -->
         <form
           class="row col-6"
@@ -34,7 +34,7 @@
           th:method="post"
           th:action="@{/orders/shipping/download}"
           enctype="multipart/form-data"
-          class="col-4"
+          class="col-2"
         >
           <input
             type="submit"
@@ -42,6 +42,32 @@
             class="btn btn-warning"
           />
         </form>
+
+        <form
+          th:method="post"
+          th:action="@{/orders/shipping/getUnshippedData}"
+          enctype="multipart/form-data"
+          class="col-2"
+        >
+          <input
+            type="submit"
+            value="未発送データの一覧"
+            class="btn btn-warning"
+          />
+        </form>
+
+      <form
+        th:method="post"
+        th:action="@{/orders/shipping/convertToCsv}"
+        enctype="multipart/form-data"
+        class="col-2"
+      >
+        <input
+          type="submit"
+          value="未発送データをダウンロード"
+          class="btn btn-warning"
+        />
+      </form>
       </div>
     </div>
 
@@ -81,10 +107,11 @@
                 />
               </td>
               <td>
-                <th:block th:text="${orderShipping.orderId}"></th:block>
+                <th:block th:text="${orderShipping.order.id}"></th:block>
                 <input
                   type="hidden"
-                  th:field="*{orderShippingList[__${st.index}__].orderId}"
+                  th:if="${orderShipping.order != null}"
+                  th:field="*{orderShippingList[__${st.index}__].order.id}"
                 />
               </td>
               <td>

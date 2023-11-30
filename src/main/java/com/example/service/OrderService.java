@@ -7,7 +7,6 @@ import com.example.constants.TaxType;
 import com.example.enums.OrderStatus;
 import com.example.enums.PaymentStatus;
 import com.example.form.OrderForm;
-import com.example.form.OrderForm.UpdateStatus;
 import com.example.model.Order;
 import com.example.model.OrderDelivery;
 import com.example.model.OrderPayment;
@@ -112,6 +111,7 @@ public class OrderService {
 			totalTax += tax;
 			totalDiscount += discount;
 		}
+
 		order.setTotal(total);
 		order.setTax(totalTax);
 		order.setDiscount(totalDiscount);
@@ -121,7 +121,6 @@ public class OrderService {
 		orderRepository.save(order);
 
 		return order;
-
 	}
 
 	@Transactional()
@@ -165,7 +164,8 @@ public class OrderService {
 	 * @throws IOException
 	 */
 	@Transactional
-	public List<OrderDelivery> importCSV(MultipartFile file) throws IOException, ParseException {
+	public List<OrderDelivery> importCSV(MultipartFile file) throws IOException,
+			ParseException {
 
 		List<OrderDelivery> orderDeliveries = new ArrayList<>();
 
@@ -173,11 +173,12 @@ public class OrderService {
 				new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
 			String line = br.readLine(); // Skip header line
 
-			SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd"); // Change the date format as needed
+			SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd"); // Changethe date format as needed
 
 			while ((line = br.readLine()) != null) {
 				final String[] split = line.replace("\"", "").split(",");
 				if (split.length >= 5) {
+					// 読み込んだデータをOrderDeliveryインスタンスに格納する
 					Integer orderId = Integer.parseInt(split[0]);
 					String shippingCode = split[1];
 					Date shippingDate = dateFormat.parse(split[2]);
@@ -185,17 +186,24 @@ public class OrderService {
 					String deliveryTimezone = split[4];
 					boolean checked = false;
 					String uploadStatus = "";
-					OrderDelivery orderDelivery = new OrderDelivery(orderId, shippingCode, shippingDate, deliveryDate,
-							deliveryTimezone, checked, uploadStatus);
+
+					// 多対一の連携ため、Orderインスタンスも準備する
+					Order order = new Order();
+					order.setId((long)orderId);
+
+					OrderDelivery orderDelivery = new OrderDelivery();
+					orderDelivery.setOrder(order);
+					orderDelivery.setShippingCode(shippingCode);
+					orderDelivery.setShippingDate(shippingDate);
+					orderDelivery.setDeliveryDate(deliveryDate);
+					orderDelivery.setDeliveryTimezone(deliveryTimezone);
+					orderDelivery.setChecked(checked);
+					orderDelivery.setUploadStatus(uploadStatus);
+
 					orderDeliveries.add(orderDelivery);
 				}
 			}
 
-			// this is batch proccessing. not important now. It working, adding the data
-			// from csv to db.But i need to add the data from the file into the page.
-			// if (!orderDeliveries.isEmpty()) {
-			// orderDeliveryRepository.saveAll(orderDeliveries);
-			// }
 		} catch (IOException | ParseException e) {
 			throw new RuntimeException("ファイルが読み込めません", e);
 		}
@@ -209,31 +217,21 @@ public class OrderService {
 	}
 
 	// Update shipping information based on user selection
-	public void updateShippingInfo(long orderId) {
-		Optional<OrderDelivery> existingOrder = orderDeliveryRepository.findById(orderId);
-
-		// If the order does not exist, create a new order with shipping information
-		OrderDelivery newDelivery = new OrderDelivery();
-		newDelivery.setOrderId((int)orderId);
-
-	}
-
 	@Transactional
 	public String saveOrderDelivery(OrderDelivery orderDelivery) {
-		// Check if an existing record with the same data exists
-		Optional<Order> existingOrder = orderRepository.findById(
-				orderDelivery.getOrderId());
-
+		// Retrieve the Order associated with the OrderDelivery
+		Optional<Order> existingOrder = orderRepository.findById(orderDelivery.getOrder().getId());
 		if (existingOrder.isPresent()) {
-			var existingOrderStatus = existingOrder.get().getPaymentStatus();
+			Order existingOrderObj = existingOrder.get();
+			var existingOrderStatus = existingOrderObj.getPaymentStatus();
 			if (existingOrderStatus.equals(OrderStatus.COMPLETED)) {
 				return "error";
 			} else {
 				try {
 					orderDeliveryRepository.save(orderDelivery);
-					if (!existingOrder.get().getStatus().equals(OrderStatus.SHIPPED)) {
-						existingOrder.get().setStatus(OrderStatus.SHIPPED);
-						orderRepository.save(existingOrder.get());
+					if (!existingOrderObj.getStatus().equals(OrderStatus.SHIPPED)) {
+						existingOrderObj.setStatus(OrderStatus.SHIPPED);
+						orderRepository.save(existingOrderObj);
 					}
 					return "success";
 				} catch (Exception e) {
@@ -244,7 +242,24 @@ public class OrderService {
 		} else {
 			return "error";
 		}
+	}
 
+	// 未発送オーダーのデータを取得する
+	public List<OrderDelivery> getUnshippedData() {
+		// 未発送のオーダーを取得する
+		List<Order> unshippedOrders = orderRepository.findAllByStatus("ordered");
+		List<Long> orderIds = new ArrayList<>();
+		// 未発送オーダーのIDを取得する
+		for (Order order : unshippedOrders) {
+			orderIds.add(order.getId());
+		}
+		List<OrderDelivery> orderDeliveries = new ArrayList<>();
+
+		if (!orderIds.isEmpty()) {
+			orderDeliveries = orderDeliveryRepository.findAllByOrderIds(orderIds);
+		}
+		// 未発送オーダーのデータを返す
+		return orderDeliveries;
 	}
 
 }
